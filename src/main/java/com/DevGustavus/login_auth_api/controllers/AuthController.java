@@ -6,6 +6,7 @@ import com.DevGustavus.login_auth_api.dto.ResponseDTO;
 import com.DevGustavus.login_auth_api.infra.security.TokenService;
 import com.DevGustavus.login_auth_api.models.User;
 import com.DevGustavus.login_auth_api.repositories.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,13 +30,14 @@ public class AuthController {
         User user = this.repository.findByEmail(body.email()).orElseThrow(() -> new RuntimeException("User not found"));
         if(passwordEncoder.matches(body.password(), user.getPassword())) {
             String token = this.tokenService.generateToken(user);
+            System.out.println("Login feito com sucesso!");
             return ResponseEntity.ok(new ResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole(), token));
         }
         return ResponseEntity.badRequest().build();
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody RegisterRequestDTO body){
+    public ResponseEntity register(@RequestBody @Valid RegisterRequestDTO body){
         Optional<User> user = this.repository.findByEmail(body.email());
 
         if(user.isEmpty()) {
@@ -47,6 +49,7 @@ public class AuthController {
             this.repository.save(newUser);
 
             String token = this.tokenService.generateToken(newUser);
+            System.out.println("Usuario registrado com sucesso!");
             return ResponseEntity.ok(new ResponseDTO(newUser.getId(), newUser.getName(), newUser.getEmail(), newUser.getRole(), token));
         }
         return ResponseEntity.badRequest().build();
