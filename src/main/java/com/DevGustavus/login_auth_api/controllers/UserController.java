@@ -3,7 +3,6 @@ package com.DevGustavus.login_auth_api.controllers;
 import com.DevGustavus.login_auth_api.dto.UpdateDTO;
 import com.DevGustavus.login_auth_api.models.User;
 import com.DevGustavus.login_auth_api.repositories.UserRepository;
-import org.hibernate.sql.Update;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +38,14 @@ public class UserController {
 
             userRepository.save(existingUser);
             return ResponseEntity.ok(existingUser);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Object> deleteUserById(@PathVariable String id) {
+        return userRepository.findById(id).map(user -> {
+            userRepository.deleteById(id);
+            return ResponseEntity.noContent().build(); // 204 No Content
         }).orElse(ResponseEntity.notFound().build());
     }
 }
