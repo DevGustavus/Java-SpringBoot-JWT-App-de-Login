@@ -4,10 +4,12 @@ import com.DevGustavus.login_auth_api.dto.UpdateDTO;
 import com.DevGustavus.login_auth_api.models.User;
 import com.DevGustavus.login_auth_api.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
@@ -42,10 +44,12 @@ public class UserController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Object> deleteUserById(@PathVariable String id) {
+    public ResponseEntity<Map<String, String>> deleteUserById(@PathVariable String id) {
         return userRepository.findById(id).map(user -> {
             userRepository.deleteById(id);
-            return ResponseEntity.noContent().build(); // 204 No Content
-        }).orElse(ResponseEntity.notFound().build());
+            return ResponseEntity.ok().body(Map.of("message", "Usuário deletado com sucesso", "id", id));
+        }).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Usuário não encontrado", "id", id)));
     }
+
 }
