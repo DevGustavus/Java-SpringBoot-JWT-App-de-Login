@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
@@ -44,12 +45,40 @@ public class UserController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Map<String, String>> deleteUserById(@PathVariable String id) {
-        return userRepository.findById(id).map(user -> {
-            userRepository.deleteById(id);
-            return ResponseEntity.ok().body(Map.of("message", "Usuário deletado com sucesso", "id", id));
-        }).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "Usuário não encontrado", "id", id)));
-    }
+    public ResponseEntity<Map<String, String>> deleteUserById(
+            @PathVariable String id,
+            @RequestParam(name = "executorId") String executorId) {
 
+        Optional<User> userToDeleteOpt = userRepository.findById(id);
+        Optional<User> executorOpt = userRepository.findById(executorId);
+
+        if (userToDeleteOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Usuário a ser deletado não encontrado", "id", id));
+        }
+
+        if (executorOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Usuário executor não encontrado", "executorId", executorId));
+        }
+
+        User userToDelete = userToDeleteOpt.get();
+        User executor = executorOpt.get();
+
+        // Só administradores (role 2) podem excluir usuários
+        if (executor.getRole() != 2) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Apenas administradores podem excluir usuários"));
+        }
+
+        // Administrador não pode excluir outro administrador
+        if (userToDelete.getRole() == 2) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Você não pode excluir outro administrador"));
+        }
+
+        userRepository.deleteById(id);
+        return ResponseEntity.ok()
+                .body(Map.of("message", "Usuário deletado com sucesso", "id", id));
+    }
 }
